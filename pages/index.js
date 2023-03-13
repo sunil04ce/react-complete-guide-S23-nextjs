@@ -1,26 +1,20 @@
+import Head from "next/head";
+import { MongoClient } from "mongodb";
 import MeetupList from "@component/components/meetups/MeetupList";
-const DUMMY_MEETUPS = [
-  {
-    id: "m1",
-    title: "NextJS meetup",
-    image:
-      "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2018/11/21/1051/Hyatt-Ahmedabad-P074-Exterior.jpg/Hyatt-Ahmedabad-P074-Exterior.16x9.jpg?imwidth=1280",
-    address: "Next to Alpha One Mall, Vastrapur",
-    description: "This is meetup for nextjs",
-  },
-  {
-    id: "m2",
-    title: "React meetup",
-    image:
-      "https://www.tajhotels.com/content/dam/luxury/hotels/taj-ahmedabad/Lobby%20Lounge.jpg/jcr:content/renditions/cq5dam.web.1280.1280.jpeg",
-    address:
-      "The Taj Skyline, Sindhu Bhavan Marg, PRL Colony, Thaltej, Ahmedabad",
-    description: "This is meetup for reactjs",
-  },
-];
 
 const HomePage = (props) => {
-  return <MeetupList meetups={props.meetups}></MeetupList>;
+  return (
+    <>
+      <Head>
+        <title>React Meetups</title>
+        <meta
+          name="description"
+          content="Browse list of active React meetups!"
+        ></meta>
+      </Head>
+      <MeetupList meetups={props.meetups}></MeetupList>
+    </>
+  );
 };
 
 // export async function getServerSideProps(context) {
@@ -35,9 +29,24 @@ const HomePage = (props) => {
 // }
 
 export async function getStaticProps() {
+  const client = await MongoClient.connect(
+    "mongodb+srv://<username>:<password>@cluster0.mycz2ku.mongodb.net/meetups?retryWrites=true&w=majority"
+  );
+  const db = client.db();
+  const meetupsCollection = db.collection("meetups");
+
+  const meetups = await meetupsCollection.find().toArray();
+  client.close();
+
   return {
     props: {
-      meetups: DUMMY_MEETUPS,
+      meetups: meetups.map((meetup) => ({
+        title: meetup.title,
+        image: meetup.image,
+        address: meetup.address,
+        description: meetup.description,
+        id: meetup._id.toString(),
+      })),
     },
     revalidate: 10,
   };
